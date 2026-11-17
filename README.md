@@ -62,27 +62,38 @@ Příklady:
 - **Konec streamu loop:** `…?t=300&label=Stream končí&bg=0&controls=0&autostart=1&loop=1`
 - **Krátký odpočet se zvukem:** `…?t=15&autostart=1`
 
-## Nastavení ve StreamElements (panel se nikdy neukáže)
+## Nastavení ve StreamElements (pořádný widget)
 
 Ve widgetu je ovládací panel **vypnutý úplně** — na stream se nikdy nezobrazí.
-Čas a nápis se nastavují v **nastavení widgetu**:
+Čas a nápis se nastavují v **levém panelu editoru** (pole, která definuješ v záložce FIELDS).
 
-1. StreamElements → *Overlaye* → **+ Přidat widget** → **Custom**
-2. Do pole **HTML** vlož obsah `index.html`
-   (kdyby se časovač nespustí, zkopíruj obsah `<script>…</script>` do pole **JS**)
-3. V záložce **Data** přidej pole — použij stejné názvy:
+### Vytvoření widgetu
 
-| Pole (name) | Typ | Příklad |
-|---|---|---|
-| `time` | text | `5:00`, `90`, `1:30:00` |
-| `label` | text | `Začínáme za` (prázdné = jen číslice) |
-| `bg` | checkbox | zaškrtnuto = vlastní pozadí, **odškrtnuto = průhledné** |
-| `sound` | checkbox | zvukový signál na konci |
-| `autostart` | checkbox | výchozě zapnuté — odpočet odstartuje sám |
-| `loop` | checkbox | opakuje se po dokončení |
+1. StreamElements → *Moje overlaye* → **+ Přidat widget** → **Custom**
+2. Klikni na **OPEN EDITOR** — otevře se editor se záložkami **HTML / CSS / JS / FIELDS**
+3. Do záložek vlož obsah souborů ze složky `streamelements/`:
 
-Výchozí hodnoty (když žádné pole nepřidáš) jsou na začátku `index.html`
-v bloku `DEFAULT_*`.
+| Záložka | Soubor |
+|---|---|
+| **HTML** | `streamelements/markup.html` |
+| **CSS** | `streamelements/style.css` |
+| **JS** | `streamelements/script.js` |
+| **FIELDS** | `streamelements/fields.json` |
+
+4. **Save** — v levém panelu se objeví nastavení widgetu
+
+### Pole v levém panelu
+
+| Pole | Co nastavíš |
+|---|---|
+| **Čas odpočtu** | `5:00`, `90` (sekund), `1:30:00` |
+| **Nápis** | nad číslicemi; prázdné = jen číslice |
+| **Pozadí západu slunce** | vypnuto = **průhledné** (overlay) |
+| **Zvukový signál** | pípnutí na konci |
+| **Odstartovat automaticky** | zapnuto = poběží hned po načtení |
+| **Opakovat** | po dokončení restart po 2,5 s |
+
+Změny se projeví okamžitě v náhledu editoru.
 
 ## Poznámky
 

@@ -1,0 +1,34 @@
+{
+  "widgetName": { "type": "hidden", "value": "Odpočet (GTA VI)" },
+
+  "time": {
+    "type": "text",
+    "label": "Čas odpočtu (např. 5:00, 90, 1:30:00)",
+    "value": "5:00"
+  },
+  "label": {
+    "type": "text",
+    "label": "Nápis nad číslicemi (prázdné = jen číslice)",
+    "value": "Začínáme za"
+  },
+  "bg": {
+    "type": "checkbox",
+    "label": "Pozadí západu slunce (vypnuto = průhledné pro overlay)",
+    "value": false
+  },
+  "sound": {
+    "type": "checkbox",
+    "label": "Zvukový signál na konci",
+    "value": false
+  },
+  "autostart": {
+    "type": "checkbox",
+    "label": "Odstartovat automaticky po načtení",
+    "value": true
+  },
+  "loop": {
+    "type": "checkbox",
+    "label": "Opakovat po dokončení (2,5 s pauza)",
+    "value": false
+  }
+}

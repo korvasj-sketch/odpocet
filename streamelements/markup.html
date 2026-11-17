@@ -1,0 +1,46 @@
+﻿<div class="odpocet" id="odpocet">
+
+  <div class="stage">
+    <div class="label" id="label">ZaÄŤĂ­nĂˇme za</div>
+    <div class="time" id="time">00:05:00</div>
+    <div class="hint" id="hint">Prostor Â· start / pauza&nbsp;&nbsp;Â·&nbsp;&nbsp;R Â· reset&nbsp;&nbsp;Â·&nbsp;&nbsp;â†‘â†“ Â· minuty</div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="grp">
+      <span class="cap">ÄŚas</span>
+      <div class="tinputs">
+        <input type="number" id="hh" min="0" max="99" value="0" aria-label="Hodiny"><i>h</i>
+        <input type="number" id="mm" min="0" max="59" value="5" aria-label="Minuty"><i>m</i>
+        <input type="number" id="ss" min="0" max="59" value="0" aria-label="Sekundy"><i>s</i>
+      </div>
+    </div>
+
+    <div class="grp">
+      <span class="cap">RychlĂ©</span>
+      <div class="presets" id="presets">
+        <button data-s="60">1 min</button>
+        <button data-s="300">5 min</button>
+        <button data-s="600">10 min</button>
+        <button data-s="900">15 min</button>
+        <button data-s="1800">30 min</button>
+        <button data-s="3600">60 min</button>
+      </div>
+    </div>
+
+    <div class="grp">
+      <span class="cap">NĂˇpis</span>
+      <input type="text" id="labelIn" maxlength="36" placeholder="ZAÄŚĂŤNĂME ZA" aria-label="NĂˇpis nad odpoÄŤtem">
+    </div>
+
+    <div class="grp actions">
+      <button class="primary" id="toggleBtn">&#9654; Start</button>
+      <button id="resetBtn">&#8635; Reset</button>
+    </div>
+
+    <div class="grp actions">
+      <button class="tog" id="bgBtn" aria-pressed="true" title="PrĹŻhlednĂ© pozadĂ­ pro OBS">PozadĂ­</button>
+      <button class="tog" id="soundBtn" aria-pressed="true" title="ZvukovĂ˝ signĂˇl na konci">Zvuk</button>
+    </div>
+  </div>
+</div>

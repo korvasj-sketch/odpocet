@@ -10,29 +10,37 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
+  .odpocet{
     --pink:#FF3D8B; --orange:#FF8A3D; --yellow:#FFE45C; --purple:#B94DFF;
     --ink:#14082B; --panel:rgba(16,7,34,.88); --line:rgba(255,61,139,.35);
     --txt:#F5E9FF; --muted:#B9A6D6;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{
-    margin:0; overflow:hidden; display:grid; place-items:center;
+  body{ margin:0; overflow:hidden }
+  .odpocet{
+    position:absolute; inset:0; overflow:hidden;
+    display:grid; place-items:center;
     font:600 14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
     color:var(--txt);
     background:
       radial-gradient(140% 90% at 50% 118%, #FFC24B 0%, #FF7A3C 20%, #FF3D8B 46%, #B23DFF 70%, rgba(27,11,51,0) 100%),
       linear-gradient(180deg, #14082B 0%, #2A0F4E 42%, #5A1E68 72%, #8C2F63 100%);
-    background-attachment:fixed;
     -webkit-font-smoothing:antialiased;
   }
-  body::after{   /* jemný vinětový rám */
-    content:""; position:fixed; inset:0; pointer-events:none;
+  .odpocet::after{   /* jemný vinětový rám */
+    content:""; position:absolute; inset:0; pointer-events:none;
     background:radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(10,4,20,.5) 100%);
   }
-  body.transparent{background:transparent!important}
-  body.transparent::after{background:none!important}
+  .odpocet.transparent{background:transparent!important}
+  .odpocet.transparent::after{background:none!important}
+  /* StreamElements: velikost číslic podle boxu widgetu (když prohlížeč podporuje
+     container queries), jinak se sáhne po vw jako dřív */
+  @supports (font-size:1cqw){
+    .odpocet{ container-type:size }
+    .label{ font-size:clamp(15px,2.7cqw,32px) }
+    .time{ font-size:clamp(74px,17cqw,250px) }
+  }
 
   .stage{ text-align:center; padding:20px; transform:translateY(-3vh); z-index:1 }
   .label{
@@ -41,7 +49,7 @@
     color:#fff; text-shadow:0 0 24px rgba(255,61,139,.9), 0 0 60px rgba(255,61,139,.4);
     min-height:1em;
   }
-  body.finished .label{ color:var(--yellow); text-shadow:0 0 26px rgba(255,228,92,.95) }
+  .odpocet.finished .label{ color:var(--yellow); text-shadow:0 0 26px rgba(255,228,92,.95) }
   .time{
     font-family:"Anton",sans-serif; font-size:clamp(74px,17vw,250px); line-height:1;
     letter-spacing:.01em; user-select:none;
@@ -57,7 +65,7 @@
     from{ filter:drop-shadow(0 0 16px rgba(255,61,139,.65)) }
     to  { filter:drop-shadow(0 0 52px rgba(255,228,92,.95)) }
   }
-  body.finished .time{ animation:blink .5s steps(2,end) infinite }
+  .odpocet.finished .time{ animation:blink .5s steps(2,end) infinite }
   @keyframes blink{ 50%{ opacity:.25 } }
   .hint{
     margin-top:clamp(6px,1.5vh,16px); font-size:12px; letter-spacing:.2em;
@@ -76,8 +84,8 @@
     transition:opacity .25s, transform .25s;
   }
   .panel.hidden{ opacity:0; transform:translateX(-50%) translateY(16px); pointer-events:none }
-  body.nocontrols .panel{ display:none }   /* v overlayi panel NIKDY nevidět */
-  body.nocontrols .hint{ display:none }
+  .odpocet.nocontrols .panel{ display:none }   /* v overlayi panel NIKDY nevidět */
+  .odpocet.nocontrols .hint{ display:none }
   .grp{ display:flex; flex-direction:column; gap:6px }
   .grp>span.cap{
     font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)
@@ -125,11 +133,12 @@
     .stage{ transform:translateY(-6vh) }
   }
   @media (prefers-reduced-motion:reduce){
-    .time,.time.urgent,body.finished .time{ animation:none!important }
+    .time,.time.urgent,.odpocet.finished .time{ animation:none!important }
   }
 </style>
 </head>
 <body>
+<div class="odpocet" id="odpocet">
 
   <div class="stage">
     <div class="label" id="label">Začínáme za</div>
@@ -174,22 +183,24 @@
       <button class="tog" id="soundBtn" aria-pressed="true" title="Zvukový signál na konci">Zvuk</button>
     </div>
   </div>
+</div>
 
 <script>
 /* ============================================================================
    ▸ NASTAVENÍ — uprav tady ◂
-   Ve StreamElements: vlož tento soubor do pole HTML Custom widgetu a přepiš
-   hodnoty níže. V OBS: čas řešíš rovnou v URL (?t=10:00), tady nic měnit nemusíš.
+   Prohlížeč / OBS: čas řešíš v URL (?t=10:00) nebo tímhle blokem.
+   StreamElements: sem nesahej — vše se nastavuje v editoru widgetu
+   (záložka FIELDS, soubor streamelements/fields.json).
    ========================================================================== */
 var DEFAULT_TIME   = "5:00";     // výchozí čas: "90" (sekund), "5:00", "1:30:00"
 var DEFAULT_LABEL  = "Začínáme za";  // nápis nad odpočtem ("" = jen číslice)
 var DEFAULT_BG     = true;       // true = vlastní pozadí, false = průhledné (overlay)
 var DEFAULT_SOUND  = true;       // true = pípnutí na konci
-   // (Ve StreamElements má přednost nastavení widgetu — pole time/label/bg/sound.)
 /* ========================================================================== */
 (function(){
   "use strict";
   var $ = function(id){ return document.getElementById(id); };
+  var root = document.getElementById("odpocet") || document.body;  // kořen widgetu (ve StreamElements jen div)
   var timeEl = $("time"), labelEl = $("label"), hintEl = $("hint"), panel = $("panel");
   var hh = $("hh"), mm = $("mm"), ss = $("ss"), labelIn = $("labelIn");
   var toggleBtn = $("toggleBtn"), resetBtn = $("resetBtn"), bgBtn = $("bgBtn"), soundBtn = $("soundBtn");
@@ -307,7 +318,7 @@ var DEFAULT_SOUND  = true;       // true = pípnutí na konci
   /* ---------- ovládání ---------- */
   function setFinishedLook(on){
     finished = on;
-    document.body.classList.toggle("finished", on);
+    root.classList.toggle("finished", on);
     labelEl.textContent = on ? "Konec" : labelIn.value.trim();
   }
   function start(){
@@ -400,7 +411,7 @@ var DEFAULT_SOUND  = true;       // true = pípnutí na konci
     if (useSound) ensureAudio();
   });
   function applyBg(){
-    document.body.classList.toggle("transparent", !useBg);
+    root.classList.toggle("transparent", !useBg);
     bgBtn.setAttribute("aria-pressed", String(useBg));
   }
   function applySound(){
@@ -444,16 +455,53 @@ var DEFAULT_SOUND  = true;       // true = pípnutí na konci
     window.addEventListener(ev, poke, {passive:true});
   });
 
-  /* ---------- start ---------- */
-  if (urlLabel != null) labelIn.value = urlLabel;
-  else labelIn.value = settings.label;
-  totalToInputs(total);
-  applyBg(); applySound();
-  if (noControls) document.body.classList.add("nocontrols");
-  else poke();
-  labelEl.textContent = labelIn.value.trim();
-  render();
-  if (autostart) start();
+  /* ---------- StreamElements: pole přijdou událostí onWidgetLoad ---------- */
+  function applyFieldsLive(fd){
+    if (!fd) return;
+    if (fd.time != null && fd.time !== ""){
+      var t = parseDur(fd.time);
+      if (t > 0 && t !== total){         /* jen když se čas liší — jinak by se rozběh odpočet znovu */
+        total = t; totalToInputs(total); lastSec = -1;
+        remainingMs = total * 1000;
+        if (running) endsAt = performance.now() + remainingMs;
+      }
+    }
+    if (fd.label != null){
+      settings.label = String(fd.label); labelIn.value = settings.label;
+      if (!finished) labelEl.textContent = settings.label.trim();
+    }
+    if (fd.bg    != null){ useBg    = truthy(fd.bg);    settings.bg    = useBg; }
+    if (fd.sound != null){ useSound = truthy(fd.sound); settings.sound = useSound; }
+    if (fd.autostart != null) autostart = truthy(fd.autostart);
+    if (fd.loop      != null) loopMode  = truthy(fd.loop);
+    applyBg(); applySound(); render();
+    if (booted && autostart && !running && !finished) start();
+  }
+
+  var booted = false;
+  function boot(){
+    if (booted) return;
+    booted = true;
+    if (urlLabel != null) labelIn.value = urlLabel;
+    else labelIn.value = settings.label;
+    totalToInputs(total);
+    applyBg(); applySound();
+    if (noControls) root.classList.add("nocontrols");
+    else poke();
+    labelEl.textContent = labelIn.value.trim();
+    render();
+    if (autostart) start();
+  }
+  window.addEventListener("onWidgetLoad", function(obj){
+    /* tato událost přichází JEN ve StreamElements → panel tam nikdy nevidět */
+    root.classList.add("nocontrols");
+    try{ applyFieldsLive(obj && obj.detail ? obj.detail.fieldData : null); }catch(e){}
+    boot();
+  });
+  /* mimo StreamElements startujeme hned; ve widgetu čekáme na onWidgetLoad
+     (záložní start po 1,5 s, kdyby event nepřišel) */
+  if (!inWidget) boot();
+  else setTimeout(boot, 1500);
 })();
 </script>
 </body>

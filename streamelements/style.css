@@ -1,0 +1,128 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;600;700&display=swap');
+
+  .odpocet{
+    --pink:#FF3D8B; --orange:#FF8A3D; --yellow:#FFE45C; --purple:#B94DFF;
+    --ink:#14082B; --panel:rgba(16,7,34,.88); --line:rgba(255,61,139,.35);
+    --txt:#F5E9FF; --muted:#B9A6D6;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{ margin:0; overflow:hidden }
+  .odpocet{
+    position:absolute; inset:0; overflow:hidden;
+    display:grid; place-items:center;
+    font:600 14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(140% 90% at 50% 118%, #FFC24B 0%, #FF7A3C 20%, #FF3D8B 46%, #B23DFF 70%, rgba(27,11,51,0) 100%),
+      linear-gradient(180deg, #14082B 0%, #2A0F4E 42%, #5A1E68 72%, #8C2F63 100%);
+    -webkit-font-smoothing:antialiased;
+  }
+  .odpocet::after{   /* jemnĂ˝ vinÄ›tovĂ˝ rĂˇm */
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(10,4,20,.5) 100%);
+  }
+  .odpocet.transparent{background:transparent!important}
+  .odpocet.transparent::after{background:none!important}
+  /* StreamElements: velikost ÄŤĂ­slic podle boxu widgetu (kdyĹľ prohlĂ­ĹľeÄŤ podporuje
+     container queries), jinak se sĂˇhne po vw jako dĹ™Ă­v */
+  @supports (font-size:1cqw){
+    .odpocet{ container-type:size }
+    .label{ font-size:clamp(15px,2.7cqw,32px) }
+    .time{ font-size:clamp(74px,17cqw,250px) }
+  }
+
+  .stage{ text-align:center; padding:20px; transform:translateY(-3vh); z-index:1 }
+  .label{
+    font-family:"Anton",sans-serif; text-transform:uppercase;
+    font-size:clamp(15px,2.7vw,32px); letter-spacing:.34em; margin:0 0 clamp(6px,1.4vh,16px);
+    color:#fff; text-shadow:0 0 24px rgba(255,61,139,.9), 0 0 60px rgba(255,61,139,.4);
+    min-height:1em;
+  }
+  .odpocet.finished .label{ color:var(--yellow); text-shadow:0 0 26px rgba(255,228,92,.95) }
+  .time{
+    font-family:"Anton",sans-serif; font-size:clamp(74px,17vw,250px); line-height:1;
+    letter-spacing:.01em; user-select:none;
+    background:linear-gradient(180deg,#FFE45C 0%, #FFA23D 30%, #FF3D8B 62%, #B94DFF 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 8px 42px rgba(255,61,139,.5));
+  }
+  .time .d{ display:inline-block; width:.62em; text-align:center }
+  /* .c (dvojteÄŤka) schvĂˇlnÄ› BEZ vlastnĂ­ch stylĹŻ: opacity/transform by vytvoĹ™ily
+     vlastnĂ­ vrstvu a Chromium by glif v rĂˇmci background-clip:text nakreslilo mimo mĂ­sto */
+  .time.urgent{ animation:urg .5s ease-in-out infinite alternate }
+  @keyframes urg{
+    from{ filter:drop-shadow(0 0 16px rgba(255,61,139,.65)) }
+    to  { filter:drop-shadow(0 0 52px rgba(255,228,92,.95)) }
+  }
+  .odpocet.finished .time{ animation:blink .5s steps(2,end) infinite }
+  @keyframes blink{ 50%{ opacity:.25 } }
+  .hint{
+    margin-top:clamp(6px,1.5vh,16px); font-size:12px; letter-spacing:.2em;
+    text-transform:uppercase; color:rgba(255,255,255,.45); min-height:1em;
+  }
+
+  /* ---------- ovlĂˇdacĂ­ panel ---------- */
+  .panel{
+    position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+    z-index:20; display:flex; gap:12px 16px; flex-wrap:wrap; align-items:flex-end;
+    justify-content:center; padding:14px 16px;
+    max-width:min(1000px, calc(100vw - 20px));
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    box-shadow:0 24px 60px -24px rgba(0,0,0,.9), 0 0 40px -18px rgba(255,61,139,.55);
+    transition:opacity .25s, transform .25s;
+  }
+  .panel.hidden{ opacity:0; transform:translateX(-50%) translateY(16px); pointer-events:none }
+  .odpocet.nocontrols .panel{ display:none }   /* v overlayi panel NIKDY nevidÄ›t */
+  .odpocet.nocontrols .hint{ display:none }
+  .grp{ display:flex; flex-direction:column; gap:6px }
+  .grp>span.cap{
+    font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)
+  }
+  .tinputs{ display:flex; gap:6px; align-items:center }
+  .tinputs input{
+    width:64px; text-align:center; font:700 17px "Inter",sans-serif; color:var(--txt);
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:9px 4px;
+    color-scheme:dark; transition:border-color .15s, box-shadow .15s;
+  }
+  .tinputs input:focus{ outline:none; border-color:var(--pink); box-shadow:0 0 0 3px rgba(255,61,139,.25) }
+  .tinputs input::-webkit-outer-spin-button,.tinputs input::-webkit-inner-spin-button{ opacity:.35 }
+  .tinputs i{ font-style:normal; color:var(--muted); font-size:12px; width:12px; text-align:center }
+
+  .presets{ display:flex; gap:6px; flex-wrap:wrap }
+  .presets button{ min-width:56px }
+  button{
+    font:700 13px "Inter",sans-serif; color:var(--txt); cursor:pointer;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16);
+    border-radius:10px; padding:9px 13px; text-transform:uppercase; letter-spacing:.06em;
+    transition:.15s;
+  }
+  button:hover{ border-color:var(--pink); color:#fff; background:rgba(255,61,139,.14) }
+  button:active{ transform:translateY(1px) }
+  button.primary{
+    background:linear-gradient(135deg,var(--orange),var(--pink) 55%,var(--purple));
+    border:none; color:#fff; padding:10px 22px; font-size:14px;
+    box-shadow:0 10px 26px -10px rgba(255,61,139,.8);
+  }
+  button.primary:hover{ filter:brightness(1.1); background:linear-gradient(135deg,var(--orange),var(--pink) 55%,var(--purple)) }
+  button.tog[aria-pressed="false"]{ opacity:.55 }
+  button.tog[aria-pressed="true"]{ border-color:var(--pink); color:#FFD9EA; background:rgba(255,61,139,.16) }
+  #labelIn{
+    width:210px; font:700 13px "Inter",sans-serif; color:var(--txt); text-transform:uppercase;
+    letter-spacing:.08em; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14);
+    border-radius:10px; padding:9px 11px; transition:border-color .15s, box-shadow .15s;
+  }
+  #labelIn:focus{ outline:none; border-color:var(--pink); box-shadow:0 0 0 3px rgba(255,61,139,.25) }
+  .actions{ flex-direction:row; align-items:flex-end; gap:8px }
+
+  @media (max-width:720px){
+    .panel{ bottom:10px; padding:12px; gap:10px 12px }
+    #labelIn{ width:150px }
+    .tinputs input{ width:56px }
+    .stage{ transform:translateY(-6vh) }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .time,.time.urgent,.odpocet.finished .time{ animation:none!important }
+  }
+
