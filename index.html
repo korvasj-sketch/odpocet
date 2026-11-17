@@ -76,7 +76,7 @@
     transition:opacity .25s, transform .25s;
   }
   .panel.hidden{ opacity:0; transform:translateX(-50%) translateY(16px); pointer-events:none }
-  body.nocontrols .panel{ display:none }
+  body.nocontrols .panel{ display:none }   /* v overlayi panel NIKDY nevidět */
   body.nocontrols .hint{ display:none }
   .grp{ display:flex; flex-direction:column; gap:6px }
   .grp>span.cap{
@@ -134,7 +134,7 @@
   <div class="stage">
     <div class="label" id="label">Začínáme za</div>
     <div class="time" id="time">00:05:00</div>
-    <div class="hint" id="hint">Prostor · start / pauza&nbsp;&nbsp;·&nbsp;&nbsp;R · reset</div>
+    <div class="hint" id="hint">Prostor · start / pauza&nbsp;&nbsp;·&nbsp;&nbsp;R · reset&nbsp;&nbsp;·&nbsp;&nbsp;↑↓ · minuty</div>
   </div>
 
   <div class="panel" id="panel">
@@ -185,6 +185,7 @@ var DEFAULT_TIME   = "5:00";     // výchozí čas: "90" (sekund), "5:00", "1:30
 var DEFAULT_LABEL  = "Začínáme za";  // nápis nad odpočtem ("" = jen číslice)
 var DEFAULT_BG     = true;       // true = vlastní pozadí, false = průhledné (overlay)
 var DEFAULT_SOUND  = true;       // true = pípnutí na konci
+   // (Ve StreamElements má přednost nastavení widgetu — pole time/label/bg/sound.)
 /* ========================================================================== */
 (function(){
   "use strict";
@@ -200,6 +201,24 @@ var DEFAULT_SOUND  = true;       // true = pípnutí na konci
     if (saved && typeof saved === "object") for (var k in settings) if (k in saved) settings[k] = saved[k];
   }catch(e){}
   function save(){ try{ localStorage.setItem("odpocet_settings", JSON.stringify(settings)); }catch(e){} }
+
+  /* ---------- StreamElements: nastavení widgetu (na streamu se nikdy neukáže) ----------
+     Pole přidáš v editoru widgetu (Custom → Data). Podporovaná jména polí:
+     time, label, bg, sound, autostart, loop */
+  var inWidget = (typeof fieldData !== "undefined") || (typeof SE_API !== "undefined");
+  function seField(n){
+    try{
+      if (typeof fieldData === "object" && fieldData && fieldData[n] != null && fieldData[n] !== "") return fieldData[n];
+    }catch(e){}
+    return null;
+  }
+  function seBool(n){ var v = seField(n); return v != null && /^(1|on|ano|yes|true)$/i.test(String(v)); }
+  if (inWidget){
+    var seT = seField("time");  if (seT != null) settings.total = parseDur(seT);
+    var seL = seField("label"); if (seL != null) settings.label  = seL;
+    var seB = seField("bg");    if (seB != null) settings.bg     = /^(1|on|ano|yes|true)$/i.test(String(seB));
+    var seS = seField("sound"); if (seS != null) settings.sound  = /^(1|on|ano|yes|true)$/i.test(String(seS));
+  }
 
   var q = new URLSearchParams(location.search);
   function flag(v, def){ return v == null ? def : !/^(0|off|ne|no|false)$/i.test(v); }
@@ -222,9 +241,11 @@ var DEFAULT_SOUND  = true;       // true = pípnutí na konci
   var urlLabel = q.get("label");
   var useBg     = flag(q.get("bg"),     settings.bg);
   var useSound  = flag(q.get("sound"),  settings.sound);
-  var noControls = !flag(q.get("controls"), true);   // ?controls=0 → panel trvale skrytý
-  var autostart = q.get("autostart") != null && /^(1|on|ano|yes|true)$/i.test(q.get("autostart"));
-  var loopMode  = q.get("loop") != null && /^(1|on|ano|yes|true)$/i.test(q.get("loop"));
+  var noControls = inWidget || !flag(q.get("controls"), true);  // widget/OBS: panel se NIKDY neukáže
+  function truthy(v){ return v != null && /^(1|on|ano|yes|true)$/i.test(String(v)); }
+  var autostart = q.get("autostart") != null ? truthy(q.get("autostart"))
+                : (inWidget && seField("autostart") == null ? true : seBool("autostart"));
+  var loopMode  = q.get("loop") != null ? truthy(q.get("loop")) : seBool("loop");
 
   /* ---------- stav časovače ---------- */
   var remainingMs = total * 1000, endsAt = 0, running = false, timer = null;
@@ -392,6 +413,24 @@ var DEFAULT_SOUND  = true;       // true = pípnutí na konci
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
     if (e.code === "Space"){ e.preventDefault(); running ? pause() : start(); }
     else if (e.key === "r" || e.key === "R" || e.key === "ř" || e.key === "Ř"){ e.preventDefault(); reset(); }
+    /* ↑ / ↓ — ±1 min (Shift = ±10 s); za běhu posune konec, jinak restart.
+       Panel se tím NIKDY neukáže — v overlayi se čas mění jen takhle nebo
+       přes nastavení widgetu (StreamElements) / URL (OBS). */
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown"){
+      e.preventDefault();
+      var step = (e.shiftKey ? 10 : 60) * (e.key === "ArrowDown" ? -1 : 1);
+      total = Math.max(0, total + step);
+      totalToInputs(total);
+      if (running){
+        endsAt += step * 1000;
+        remainingMs = endsAt - performance.now();
+        if (remainingMs <= 0) finish();
+        else { lastSec = -1; render(); }
+      } else {
+        remainingMs = total * 1000; lastSec = -1; setFinishedLook(false); render();
+      }
+      settings.total = total; save();
+    }
   });
 
   /* ---------- samoúkrytí panelu ---------- */

@@ -16,6 +16,7 @@ i v prohlížeči nebo v mobilu.
 | Nastavení času | pole h / m / s, nebo tlačítka 1–60 min |
 | Start / pauza | tlačítko, nebo **Mezerník** |
 | Reset | tlačítko, nebo **R** |
+| ±1 min | **↑ / ↓** (Shift = ±10 s) |
 | Nápis | pole nad odpočtem (např. „Začínáme za", „Konec za") |
 | Pozadí** | přepínač — západ slunce / **průhledné (pro OBS)** |
 | Zvuk | přepínač — 3 pípnutí na konci |
@@ -37,6 +38,11 @@ https://korvasj-sketch.github.io/odpocet/?t=300&bg=0&controls=0&autostart=1
 4. Zaškrtni *„Restartovat zdroj, když se stane aktivním"* — při každém přepnutí
    scény se odpočet spustí znovu od začátku.
 
+S `controls=0` je panel **trvale skrytý** — na stream se nikdy nezobrazí.
+Čas upravíš buď v URL (`t=5:00`), nebo v okně *Interakce* (pravé tlačítko na
+zdroji → **Interakce**) šipkami **↑/↓** (±1 min, Shift = ±10 s), mezerníkem
+start/pauza, **R** reset. Panel se přitom neukáže.
+
 ### Parametry v URL
 
 | Parametr | Příklad | Co dělá |
@@ -55,6 +61,28 @@ Příklady:
 - **Pauza / BRB na 10 minut:** `…?t=600&label=Pauza&bg=0&controls=0&autostart=1`
 - **Konec streamu loop:** `…?t=300&label=Stream končí&bg=0&controls=0&autostart=1&loop=1`
 - **Krátký odpočet se zvukem:** `…?t=15&autostart=1`
+
+## Nastavení ve StreamElements (panel se nikdy neukáže)
+
+Ve widgetu je ovládací panel **vypnutý úplně** — na stream se nikdy nezobrazí.
+Čas a nápis se nastavují v **nastavení widgetu**:
+
+1. StreamElements → *Overlaye* → **+ Přidat widget** → **Custom**
+2. Do pole **HTML** vlož obsah `index.html`
+   (kdyby se časovač nespustí, zkopíruj obsah `<script>…</script>` do pole **JS**)
+3. V záložce **Data** přidej pole — použij stejné názvy:
+
+| Pole (name) | Typ | Příklad |
+|---|---|---|
+| `time` | text | `5:00`, `90`, `1:30:00` |
+| `label` | text | `Začínáme za` (prázdné = jen číslice) |
+| `bg` | checkbox | zaškrtnuto = vlastní pozadí, **odškrtnuto = průhledné** |
+| `sound` | checkbox | zvukový signál na konci |
+| `autostart` | checkbox | výchozě zapnuté — odpočet odstartuje sám |
+| `loop` | checkbox | opakuje se po dokončení |
+
+Výchozí hodnoty (když žádné pole nepřidáš) jsou na začátku `index.html`
+v bloku `DEFAULT_*`.
 
 ## Poznámky
 
