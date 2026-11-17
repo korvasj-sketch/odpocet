@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Odpočet</title>
+<meta name="theme-color" content="#14082B">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFE45C'/%3E%3Cstop offset='.5' stop-color='%23FF3D8B'/%3E%3Cstop offset='1' stop-color='%23B94DFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='47' font-size='36' text-anchor='middle'%3E%E2%8F%B1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#FF3D8B; --orange:#FF8A3D; --yellow:#FFE45C; --purple:#B94DFF;
+    --ink:#14082B; --panel:rgba(16,7,34,.88); --line:rgba(255,61,139,.35);
+    --txt:#F5E9FF; --muted:#B9A6D6;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; overflow:hidden; display:grid; place-items:center;
+    font:600 14px/1.5 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+    color:var(--txt);
+    background:
+      radial-gradient(140% 90% at 50% 118%, #FFC24B 0%, #FF7A3C 20%, #FF3D8B 46%, #B23DFF 70%, rgba(27,11,51,0) 100%),
+      linear-gradient(180deg, #14082B 0%, #2A0F4E 42%, #5A1E68 72%, #8C2F63 100%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::after{   /* jemný vinětový rám */
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background:radial-gradient(120% 100% at 50% 45%, transparent 55%, rgba(10,4,20,.5) 100%);
+  }
+  body.transparent{background:transparent!important}
+  body.transparent::after{background:none!important}
+
+  .stage{ text-align:center; padding:20px; transform:translateY(-3vh); z-index:1 }
+  .label{
+    font-family:"Anton",sans-serif; text-transform:uppercase;
+    font-size:clamp(15px,2.7vw,32px); letter-spacing:.34em; margin:0 0 clamp(6px,1.4vh,16px);
+    color:#fff; text-shadow:0 0 24px rgba(255,61,139,.9), 0 0 60px rgba(255,61,139,.4);
+    min-height:1em;
+  }
+  body.finished .label{ color:var(--yellow); text-shadow:0 0 26px rgba(255,228,92,.95) }
+  .time{
+    font-family:"Anton",sans-serif; font-size:clamp(74px,17vw,250px); line-height:1;
+    letter-spacing:.01em; user-select:none;
+    background:linear-gradient(180deg,#FFE45C 0%, #FFA23D 30%, #FF3D8B 62%, #B94DFF 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 8px 42px rgba(255,61,139,.5));
+  }
+  .time .d{ display:inline-block; width:.62em; text-align:center }
+  /* .c (dvojtečka) schválně BEZ vlastních stylů: opacity/transform by vytvořily
+     vlastní vrstvu a Chromium by glif v rámci background-clip:text nakreslilo mimo místo */
+  .time.urgent{ animation:urg .5s ease-in-out infinite alternate }
+  @keyframes urg{
+    from{ filter:drop-shadow(0 0 16px rgba(255,61,139,.65)) }
+    to  { filter:drop-shadow(0 0 52px rgba(255,228,92,.95)) }
+  }
+  body.finished .time{ animation:blink .5s steps(2,end) infinite }
+  @keyframes blink{ 50%{ opacity:.25 } }
+  .hint{
+    margin-top:clamp(6px,1.5vh,16px); font-size:12px; letter-spacing:.2em;
+    text-transform:uppercase; color:rgba(255,255,255,.45); min-height:1em;
+  }
+
+  /* ---------- ovládací panel ---------- */
+  .panel{
+    position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+    z-index:20; display:flex; gap:12px 16px; flex-wrap:wrap; align-items:flex-end;
+    justify-content:center; padding:14px 16px;
+    max-width:min(1000px, calc(100vw - 20px));
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    box-shadow:0 24px 60px -24px rgba(0,0,0,.9), 0 0 40px -18px rgba(255,61,139,.55);
+    transition:opacity .25s, transform .25s;
+  }
+  .panel.hidden{ opacity:0; transform:translateX(-50%) translateY(16px); pointer-events:none }
+  body.nocontrols .panel{ display:none }
+  body.nocontrols .hint{ display:none }
+  .grp{ display:flex; flex-direction:column; gap:6px }
+  .grp>span.cap{
+    font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)
+  }
+  .tinputs{ display:flex; gap:6px; align-items:center }
+  .tinputs input{
+    width:64px; text-align:center; font:700 17px "Inter",sans-serif; color:var(--txt);
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:9px 4px;
+    color-scheme:dark; transition:border-color .15s, box-shadow .15s;
+  }
+  .tinputs input:focus{ outline:none; border-color:var(--pink); box-shadow:0 0 0 3px rgba(255,61,139,.25) }
+  .tinputs input::-webkit-outer-spin-button,.tinputs input::-webkit-inner-spin-button{ opacity:.35 }
+  .tinputs i{ font-style:normal; color:var(--muted); font-size:12px; width:12px; text-align:center }
+
+  .presets{ display:flex; gap:6px; flex-wrap:wrap }
+  .presets button{ min-width:56px }
+  button{
+    font:700 13px "Inter",sans-serif; color:var(--txt); cursor:pointer;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16);
+    border-radius:10px; padding:9px 13px; text-transform:uppercase; letter-spacing:.06em;
+    transition:.15s;
+  }
+  button:hover{ border-color:var(--pink); color:#fff; background:rgba(255,61,139,.14) }
+  button:active{ transform:translateY(1px) }
+  button.primary{
+    background:linear-gradient(135deg,var(--orange),var(--pink) 55%,var(--purple));
+    border:none; color:#fff; padding:10px 22px; font-size:14px;
+    box-shadow:0 10px 26px -10px rgba(255,61,139,.8);
+  }
+  button.primary:hover{ filter:brightness(1.1); background:linear-gradient(135deg,var(--orange),var(--pink) 55%,var(--purple)) }
+  button.tog[aria-pressed="false"]{ opacity:.55 }
+  button.tog[aria-pressed="true"]{ border-color:var(--pink); color:#FFD9EA; background:rgba(255,61,139,.16) }
+  #labelIn{
+    width:210px; font:700 13px "Inter",sans-serif; color:var(--txt); text-transform:uppercase;
+    letter-spacing:.08em; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.14);
+    border-radius:10px; padding:9px 11px; transition:border-color .15s, box-shadow .15s;
+  }
+  #labelIn:focus{ outline:none; border-color:var(--pink); box-shadow:0 0 0 3px rgba(255,61,139,.25) }
+  .actions{ flex-direction:row; align-items:flex-end; gap:8px }
+
+  @media (max-width:720px){
+    .panel{ bottom:10px; padding:12px; gap:10px 12px }
+    #labelIn{ width:150px }
+    .tinputs input{ width:56px }
+    .stage{ transform:translateY(-6vh) }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .time,.time.urgent,body.finished .time{ animation:none!important }
+  }
+</style>
+</head>
+<body>
+
+  <div class="stage">
+    <div class="label" id="label">Začínáme za</div>
+    <div class="time" id="time">00:05:00</div>
+    <div class="hint" id="hint">Prostor · start / pauza&nbsp;&nbsp;·&nbsp;&nbsp;R · reset</div>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="grp">
+      <span class="cap">Čas</span>
+      <div class="tinputs">
+        <input type="number" id="hh" min="0" max="99" value="0" aria-label="Hodiny"><i>h</i>
+        <input type="number" id="mm" min="0" max="59" value="5" aria-label="Minuty"><i>m</i>
+        <input type="number" id="ss" min="0" max="59" value="0" aria-label="Sekundy"><i>s</i>
+      </div>
+    </div>
+
+    <div class="grp">
+      <span class="cap">Rychlé</span>
+      <div class="presets" id="presets">
+        <button data-s="60">1 min</button>
+        <button data-s="300">5 min</button>
+        <button data-s="600">10 min</button>
+        <button data-s="900">15 min</button>
+        <button data-s="1800">30 min</button>
+        <button data-s="3600">60 min</button>
+      </div>
+    </div>
+
+    <div class="grp">
+      <span class="cap">Nápis</span>
+      <input type="text" id="labelIn" maxlength="36" placeholder="ZAČÍNÁME ZA" aria-label="Nápis nad odpočtem">
+    </div>
+
+    <div class="grp actions">
+      <button class="primary" id="toggleBtn">&#9654; Start</button>
+      <button id="resetBtn">&#8635; Reset</button>
+    </div>
+
+    <div class="grp actions">
+      <button class="tog" id="bgBtn" aria-pressed="true" title="Průhledné pozadí pro OBS">Pozadí</button>
+      <button class="tog" id="soundBtn" aria-pressed="true" title="Zvukový signál na konci">Zvuk</button>
+    </div>
+  </div>
+
+<script>
+/* ============================================================================
+   ▸ NASTAVENÍ — uprav tady ◂
+   Ve StreamElements: vlož tento soubor do pole HTML Custom widgetu a přepiš
+   hodnoty níže. V OBS: čas řešíš rovnou v URL (?t=10:00), tady nic měnit nemusíš.
+   ========================================================================== */
+var DEFAULT_TIME   = "5:00";     // výchozí čas: "90" (sekund), "5:00", "1:30:00"
+var DEFAULT_LABEL  = "Začínáme za";  // nápis nad odpočtem ("" = jen číslice)
+var DEFAULT_BG     = true;       // true = vlastní pozadí, false = průhledné (overlay)
+var DEFAULT_SOUND  = true;       // true = pípnutí na konci
+/* ========================================================================== */
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var timeEl = $("time"), labelEl = $("label"), hintEl = $("hint"), panel = $("panel");
+  var hh = $("hh"), mm = $("mm"), ss = $("ss"), labelIn = $("labelIn");
+  var toggleBtn = $("toggleBtn"), resetBtn = $("resetBtn"), bgBtn = $("bgBtn"), soundBtn = $("soundBtn");
+
+  /* ---------- nastavení (localStorage + URL) ---------- */
+  var settings = { label:DEFAULT_LABEL, total:parseDur(DEFAULT_TIME), bg:DEFAULT_BG, sound:DEFAULT_SOUND };
+  try{
+    var saved = JSON.parse(localStorage.getItem("odpocet_settings") || "{}");
+    if (saved && typeof saved === "object") for (var k in settings) if (k in saved) settings[k] = saved[k];
+  }catch(e){}
+  function save(){ try{ localStorage.setItem("odpocet_settings", JSON.stringify(settings)); }catch(e){} }
+
+  var q = new URLSearchParams(location.search);
+  function flag(v, def){ return v == null ? def : !/^(0|off|ne|no|false)$/i.test(v); }
+  function parseDur(s){
+    s = String(s).trim();
+    if (/^\d+$/.test(s)) return parseInt(s,10);
+    var p = s.split(":").map(Number);
+    if (!p.length || p.some(function(n){ return !isFinite(n); })) return 300;
+    if (p.length === 3) return p[0]*3600 + p[1]*60 + p[2];
+    if (p.length === 2) return p[0]*60 + p[1];
+    return 300;
+  }
+
+  var total = settings.total;                       // sekundy
+  var urlTotal = null;
+  if (q.get("t") != null) urlTotal = parseDur(q.get("t"));
+  else if (q.get("h") != null || q.get("m") != null || q.get("s") != null)
+    urlTotal = (+q.get("h")||0)*3600 + (+q.get("m")||0)*60 + (+q.get("s")||0);
+  if (urlTotal != null && urlTotal > 0) total = urlTotal;   // z URL se neukládá
+  var urlLabel = q.get("label");
+  var useBg     = flag(q.get("bg"),     settings.bg);
+  var useSound  = flag(q.get("sound"),  settings.sound);
+  var noControls = !flag(q.get("controls"), true);   // ?controls=0 → panel trvale skrytý
+  var autostart = q.get("autostart") != null && /^(1|on|ano|yes|true)$/i.test(q.get("autostart"));
+  var loopMode  = q.get("loop") != null && /^(1|on|ano|yes|true)$/i.test(q.get("loop"));
+
+  /* ---------- stav časovače ---------- */
+  var remainingMs = total * 1000, endsAt = 0, running = false, timer = null;
+  var lastSec = -1, finished = false, loopT = null;
+
+  /* ---------- vykreslování číslic ---------- */
+  var digitSpans = [];
+  (function build(){
+    var chars = "00:00:00".split("");
+    timeEl.innerHTML = chars.map(function(c){
+      return '<span class="' + (c === ":" ? "c" : "d") + '">' + c + "</span>";
+    }).join("");
+    digitSpans = Array.prototype.slice.call(timeEl.querySelectorAll(".d"));
+  })();
+  function fmt(s){
+    var h = Math.floor(s/3600), m = Math.floor((s%3600)/60), x = s%60;
+    return [h,m,x].map(function(n){ return String(n).padStart(2,"0"); }).join("");
+  }
+  function render(){
+    var s = Math.max(0, Math.ceil(remainingMs/1000));
+    if (s === lastSec) return;
+    lastSec = s;
+    var f = fmt(s), changed = false;
+    for (var i = 0; i < digitSpans.length; i++){
+      var ch = f[i];
+      if (digitSpans[i].textContent !== ch){ digitSpans[i].textContent = ch; changed = true; }
+    }
+    if (changed) document.title = f.slice(0,2) + ":" + f.slice(2,4) + ":" + f.slice(4) + " · odpočet";
+    timeEl.classList.toggle("urgent", s <= 10 && s > 0 && !finished);
+  }
+
+  /* ---------- zvuk ---------- */
+  var ac = null;
+  function ensureAudio(){
+    if (!useSound) return;
+    try{
+      if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === "suspended") ac.resume().catch(function(){});
+    }catch(e){}
+  }
+  function beep(){
+    if (!useSound) return;
+    try{
+      ensureAudio();
+      if (!ac) return;
+      var t0 = ac.currentTime;
+      for (var i = 0; i < 3; i++){
+        var o = ac.createOscillator(), g = ac.createGain(), t = t0 + i*0.3;
+        o.type = "square"; o.frequency.value = (i % 2) ? 660 : 880;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t); o.stop(t + 0.27);
+      }
+    }catch(e){}
+  }
+
+  /* ---------- ovládání ---------- */
+  function setFinishedLook(on){
+    finished = on;
+    document.body.classList.toggle("finished", on);
+    labelEl.textContent = on ? "Konec" : labelIn.value.trim();
+  }
+  function start(){
+    if (running) return;
+    if (remainingMs <= 0) remainingMs = total * 1000;
+    if (remainingMs <= 0) return;
+    setFinishedLook(false);
+    ensureAudio();
+    endsAt = performance.now() + remainingMs;
+    running = true;
+    toggleBtn.innerHTML = "&#10074;&#10074; Pauza";
+    tick();
+    timer = setInterval(tick, 100);
+  }
+  function pause(){
+    if (!running) return;
+    remainingMs = Math.max(0, endsAt - performance.now());
+    running = false; clearInterval(timer); timer = null;
+    toggleBtn.innerHTML = "&#9654; Start";
+    render();
+  }
+  function reset(){
+    running = false; clearInterval(timer); timer = null; clearTimeout(loopT);
+    remainingMs = total * 1000; lastSec = -1;
+    setFinishedLook(false);
+    toggleBtn.innerHTML = "&#9654; Start";
+    render();
+  }
+  function finish(){
+    running = false; clearInterval(timer); timer = null;
+    remainingMs = 0; lastSec = -1;
+    toggleBtn.innerHTML = "&#9654; Start";
+    setFinishedLook(true);
+    render();
+    beep();
+    if (loopMode) loopT = setTimeout(function(){ reset(); start(); }, 2500);
+  }
+  function tick(){
+    if (!running) return;
+    remainingMs = endsAt - performance.now();
+    if (remainingMs <= 0){ finish(); return; }
+    render();
+  }
+
+  /* ---------- panel: čas, presety, nápis ---------- */
+  function inputsToTotal(){
+    var t = (+hh.value||0)*3600 + (+mm.value||0)*60 + (+ss.value||0);
+    total = Math.max(0, t);
+    if (!running){ remainingMs = total * 1000; lastSec = -1; setFinishedLook(false); render(); }
+    settings.total = total; save();
+  }
+  function totalToInputs(t){
+    hh.value = Math.floor(t/3600);
+    mm.value = Math.floor((t%3600)/60);
+    ss.value = t%60;
+  }
+  [hh,mm,ss].forEach(function(el){
+    el.addEventListener("change", inputsToTotal);
+    el.addEventListener("input", function(){
+      var v = parseInt(el.value,10);
+      if (isFinite(v)){
+        var max = +el.max;
+        if (v > max) el.value = max;
+        if (v < 0) el.value = 0;
+      }
+    });
+  });
+  $("presets").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-s]");
+    if (!b) return;
+    total = +b.dataset.s;
+    totalToInputs(total);
+    reset();
+    settings.total = total; save();
+  });
+
+  labelIn.addEventListener("input", function(){
+    settings.label = labelIn.value; save();
+    if (!finished) labelEl.textContent = labelIn.value.trim();
+  });
+
+  toggleBtn.addEventListener("click", function(){ running ? pause() : start(); });
+  resetBtn.addEventListener("click", reset);
+
+  bgBtn.addEventListener("click", function(){
+    useBg = !useBg; settings.bg = useBg; save(); applyBg();
+  });
+  soundBtn.addEventListener("click", function(){
+    useSound = !useSound; settings.sound = useSound; save(); applySound();
+    if (useSound) ensureAudio();
+  });
+  function applyBg(){
+    document.body.classList.toggle("transparent", !useBg);
+    bgBtn.setAttribute("aria-pressed", String(useBg));
+  }
+  function applySound(){
+    soundBtn.setAttribute("aria-pressed", String(useSound));
+  }
+
+  /* ---------- klávesnice ---------- */
+  document.addEventListener("keydown", function(e){
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.code === "Space"){ e.preventDefault(); running ? pause() : start(); }
+    else if (e.key === "r" || e.key === "R" || e.key === "ř" || e.key === "Ř"){ e.preventDefault(); reset(); }
+  });
+
+  /* ---------- samoúkrytí panelu ---------- */
+  var hideT = null;
+  function poke(){
+    panel.classList.remove("hidden");
+    clearTimeout(hideT);
+    hideT = setTimeout(function(){ panel.classList.add("hidden"); }, 3500);
+  }
+  ["mousemove","mousedown","keydown","touchstart","wheel"].forEach(function(ev){
+    window.addEventListener(ev, poke, {passive:true});
+  });
+
+  /* ---------- start ---------- */
+  if (urlLabel != null) labelIn.value = urlLabel;
+  else labelIn.value = settings.label;
+  totalToInputs(total);
+  applyBg(); applySound();
+  if (noControls) document.body.classList.add("nocontrols");
+  else poke();
+  labelEl.textContent = labelIn.value.trim();
+  render();
+  if (autostart) start();
+})();
+</script>
+</body>
+</html>
